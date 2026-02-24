@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'onboarding_scaffold.dart';
 import 'previous_experience.dart';
+import '../controllers/onboarding_controller.dart';
 
 class SourcePage extends StatefulWidget {
-  final double currentWeight;
   final bool isImperial;
 
   const SourcePage({
-    super.key,
-    required this.currentWeight,
     required this.isImperial,
   });
 
@@ -30,10 +28,12 @@ class _SourcePageState extends State<SourcePage> {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "Where did you hear about us?",
+      progress: 0.20,
       isContinueEnabled: _selectedSource != null,
       onContinue: () {
+        final controller = Get.find<OnboardingController>();
+        controller.source.value = _selectedSource!;
         Get.to(() => PreviousExperiencePage(
-          currentWeight: widget.currentWeight,
           isImperial: widget.isImperial,
         ));
       },

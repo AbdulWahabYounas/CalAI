@@ -23,6 +23,7 @@ class CaloriesBurnedPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "Add calories burned back to your daily goal?",
+      progress: 0.64,
       footer: Row(
         children: [
           Expanded(

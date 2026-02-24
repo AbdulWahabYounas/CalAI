@@ -24,6 +24,7 @@ class LongTermResultsPage extends StatelessWidget {
     return OnboardingScaffold(
       title: "Cal AI creates long-term results",
       subtitle: "", // No subtitle in design
+      progress: 0.80,
       isContinueEnabled: true,
       onContinue: () {
         Get.to(() => CustomPlanReadyPage(

@@ -23,6 +23,7 @@ class NotificationReminderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "Be reminded to log meals",
+      progress: 0.72,
       onContinue: () {
         Get.to(() => FinalOnboardingPage(
           goal: goal,

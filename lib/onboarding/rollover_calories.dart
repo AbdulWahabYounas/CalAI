@@ -23,6 +23,7 @@ class RolloverCaloriesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "Rollover extra calories to the next day?",
+      progress: 0.68,
       footer: Row(
         children: [
           Expanded(

@@ -2,25 +2,24 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'onboarding_scaffold.dart';
-import 'target_projection.dart';
+import 'target_weight.dart';
+import '../controllers/onboarding_controller.dart';
 
-class TargetWeightPage extends StatefulWidget {
-  final String goal; // "Lose weight" or "Gain weight"
-  final double currentWeight;
+class CurrentWeightPage extends StatefulWidget {
+  final String goal;
   final bool isImperial;
 
-  const TargetWeightPage({
+  const CurrentWeightPage({
     super.key,
     required this.goal,
-    required this.currentWeight,
     required this.isImperial,
   });
 
   @override
-  State<TargetWeightPage> createState() => _TargetWeightPageState();
+  State<CurrentWeightPage> createState() => _CurrentWeightPageState();
 }
 
-class _TargetWeightPageState extends State<TargetWeightPage> {
+class _CurrentWeightPageState extends State<CurrentWeightPage> {
   late bool _isImperial;
   late int _selectedLbs;
   late int _selectedKg;
@@ -29,24 +28,27 @@ class _TargetWeightPageState extends State<TargetWeightPage> {
   void initState() {
     super.initState();
     _isImperial = widget.isImperial;
-    _selectedLbs = _isImperial ? widget.currentWeight.round() : 140;
-    _selectedKg = !_isImperial ? widget.currentWeight.round() : 65;
+    _selectedLbs = 150;
+    _selectedKg = 68;
   }
 
   @override
   Widget build(BuildContext context) {
     return OnboardingScaffold(
-      title: "What is your target weight?",
-      subtitle: "This helps us calculate the duration to reach your goal.",
-      progress: 0.40,
+      title: "What is your current weight?",
+      subtitle: "This is the starting point of your journey.",
+      progress: 0.36,
       isContinueEnabled: true,
       onContinue: () {
-        double targetWeight = _isImperial ? _selectedLbs.toDouble() : _selectedKg.toDouble();
-        Get.to(() => TargetProjectionPage(
+        double currentWeight = _isImperial ? _selectedLbs.toDouble() : _selectedKg.toDouble();
+        final controller = Get.find<OnboardingController>();
+        controller.currentWeight.value = currentWeight;
+        controller.isImperialWeight.value = _isImperial;
+        
+        Get.to(() => TargetWeightPage(
           goal: widget.goal,
-          targetWeight: targetWeight.toString(),
-          currentWeight: widget.currentWeight,
-          isImperial: widget.isImperial,
+          currentWeight: currentWeight,
+          isImperial: _isImperial,
         ));
       },
       child: Column(

@@ -7,6 +7,7 @@ class OnboardingScaffold extends StatelessWidget {
   final VoidCallback? onContinue;
   final bool isContinueEnabled;
   final Widget? footer;
+  final double progress; // 0.0 to 1.0
 
   const OnboardingScaffold({
     super.key,
@@ -16,6 +17,7 @@ class OnboardingScaffold extends StatelessWidget {
     this.onContinue,
     this.isContinueEnabled = true,
     this.footer,
+    this.progress = 0.5, // Default progress
   });
 
   @override
@@ -40,7 +42,7 @@ class OnboardingScaffold extends StatelessWidget {
            child: Row(
             children: [
                Container(
-                 width: 140, // Increased for progress
+                 width: 200 * progress, // Updated for dynamic progress
                  decoration: BoxDecoration(
                   color: Colors.black,
                   borderRadius: BorderRadius.circular(2),

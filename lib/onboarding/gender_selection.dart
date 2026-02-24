@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'onboarding_scaffold.dart';
-import 'height_weight.dart';
+import 'height_selection.dart';
+import '../controllers/onboarding_controller.dart';
 
 class GenderSelectionPage extends StatefulWidget {
   const GenderSelectionPage({super.key});
@@ -24,9 +25,12 @@ class _GenderSelectionPageState extends State<GenderSelectionPage> {
     return OnboardingScaffold(
       title: "Choose your Gender",
       subtitle: "This will be used to calibrate your custom plan.",
+      progress: 0.04,
       isContinueEnabled: _selectedGender != null,
       onContinue: () {
-        Get.to(() => const HeightWeightPage());
+        final controller = Get.put(OnboardingController());
+        controller.gender.value = _selectedGender!;
+        Get.to(() => const HeightSelectionPage());
       },
       child: Column(
         children: [

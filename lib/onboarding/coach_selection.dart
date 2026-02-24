@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'onboarding_scaffold.dart';
 import 'goal_selection.dart';
+import '../controllers/onboarding_controller.dart';
 
 class CoachSelectionPage extends StatefulWidget {
-  final double currentWeight;
   final bool isImperial;
 
   const CoachSelectionPage({
     super.key,
-    required this.currentWeight,
     required this.isImperial,
   });
 
@@ -30,10 +29,12 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "Do you currently work with a personal coach or nutritionist?",
+      progress: 0.28,
       isContinueEnabled: _worksWithCoach != null,
       onContinue: () {
+        final controller = Get.find<OnboardingController>();
+        controller.coach.value = _worksWithCoach! ? "Yes" : "No";
         Get.to(() => GoalSelectionPage(
-          currentWeight: widget.currentWeight,
           isImperial: widget.isImperial,
         ));
       },

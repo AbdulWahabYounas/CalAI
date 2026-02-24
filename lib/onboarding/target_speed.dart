@@ -46,6 +46,7 @@ class _TargetSpeedPageState extends State<TargetSpeedPage> {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "How fast do you want to reach your goal?",
+      progress: 0.48,
       isContinueEnabled: true,
       onContinue: () {
         Get.to(() => ComparisonStatsPage(

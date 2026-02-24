@@ -23,6 +23,7 @@ class FinalOnboardingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "All done! Time to generate your custom plan!",
+      progress: 0.76,
       onContinue: () {
         Get.to(() => LongTermResultsPage(
           goal: goal,

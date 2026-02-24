@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'onboarding_scaffold.dart';
 import 'workout_frequency.dart';
+import '../controllers/onboarding_controller.dart';
 
 class BirthDatePage extends StatefulWidget {
-  final double currentWeight;
   final bool isImperial;
 
   const BirthDatePage({
     super.key,
-    required this.currentWeight,
     required this.isImperial,
   });
 
@@ -26,10 +25,12 @@ class _BirthDatePageState extends State<BirthDatePage> {
     return OnboardingScaffold(
       title: "When were you born?",
       subtitle: "This will be used to calibrate your custom plan.",
+      progress: 0.12,
       isContinueEnabled: true,
       onContinue: () {
+        final controller = Get.find<OnboardingController>();
+        controller.birthDate.value = _selectedDate;
         Get.to(() => WorkoutFrequencyPage(
-          currentWeight: widget.currentWeight,
           isImperial: widget.isImperial,
         ));
       },

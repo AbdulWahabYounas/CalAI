@@ -43,6 +43,7 @@ class _DietSelectionPageState extends State<DietSelectionPage> {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "Do you follow a specific diet?",
+      progress: 0.60,
       isContinueEnabled: _selectedDiet != null,
       onContinue: () {
         Get.to(() => CaloriesBurnedPage(

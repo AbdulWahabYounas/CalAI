@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'current_weight.dart';
 import 'onboarding_scaffold.dart';
 import 'target_weight.dart';
 import 'diet_selection.dart';
+import '../controllers/onboarding_controller.dart';
 
 class GoalSelectionPage extends StatefulWidget {
-  final double currentWeight;
   final bool isImperial;
 
   const GoalSelectionPage({
     super.key,
-    required this.currentWeight,
     required this.isImperial,
   });
 
@@ -38,23 +38,15 @@ class _GoalSelectionPageState extends State<GoalSelectionPage> {
     return OnboardingScaffold(
       title: "What is your goal?",
       subtitle: "This helps us generate a plan for your calorie intake.",
+      progress: 0.32,
       isContinueEnabled: _selectedGoal != null,
       onContinue: () {
-        if (_selectedGoal == "Maintain") {
-          Get.to(() => DietSelectionPage(
-            goal: _selectedGoal!,
-            currentWeight: widget.currentWeight,
-            isImperial: widget.isImperial,
-            targetWeight: widget.currentWeight.toString(),
-            speed: 0,
-          ));
-        } else {
-          Get.to(() => TargetWeightPage(
-            goal: _selectedGoal!,
-            currentWeight: widget.currentWeight,
-            isImperial: widget.isImperial,
-          ));
-        }
+        final controller = Get.find<OnboardingController>();
+        controller.goal.value = _selectedGoal!;
+        Get.to(() => CurrentWeightPage(
+          goal: _selectedGoal!,
+          isImperial: widget.isImperial,
+        ));
       },
       child: Column(
         children: _goals.map((goal) => Padding(

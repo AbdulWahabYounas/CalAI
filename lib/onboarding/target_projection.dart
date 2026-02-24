@@ -19,10 +19,25 @@ class TargetProjectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double targetVal = double.tryParse(targetWeight) ?? currentWeight;
+    final double diff = (currentWeight - targetVal).abs();
+    final String diffStr = diff.toStringAsFixed(0);
+    final String unit = isImperial ? "lbs" : "kg";
+
+    String reaction;
+    if (diff > 50) {
+      reaction = "This is a bold journey, and we're here to support you! $diffStr $unit is a significant goal.";
+    } else if (diff > 10) {
+      reaction = "$diffStr $unit is a realistic target. It's not hard at all!";
+    } else {
+      reaction = "You're so close! $diffStr $unit is a very achievable target.";
+    }
+
     final action = goal.toLowerCase().contains("lose") ? "Losing" : "Gaining";
     
     return OnboardingScaffold(
       title: "", // We'll build the title manually for custom styling
+      progress: 0.44,
       isContinueEnabled: true,
       onContinue: () {
         Get.to(() => TargetSpeedPage(
@@ -40,18 +55,13 @@ class TargetProjectionPage extends StatelessWidget {
               textAlign: TextAlign.center,
               text: TextSpan(
                 style: const TextStyle(
-                  fontSize: 32,
+                  fontSize: 28, // Reduced slightly to fit more text
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                   height: 1.2,
                 ),
                 children: [
-                  TextSpan(text: "$action "),
-                  TextSpan(
-                    text: targetWeight,
-                    style: const TextStyle(color: Color(0xFFE6A071)), // Warm orange color from design
-                  ),
-                  const TextSpan(text: " is a realistic target. It's not hard at all!"),
+                  TextSpan(text: reaction),
                 ],
               ),
             ),

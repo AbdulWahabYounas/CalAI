@@ -10,6 +10,7 @@ class PlanSourcesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "How to reach your goals:",
+      progress: 1.0,
       footer: SizedBox(
         width: double.infinity,
         height: 56,

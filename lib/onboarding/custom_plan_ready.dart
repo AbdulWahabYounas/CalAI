@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'onboarding_scaffold.dart';
-import 'plan_sources.dart';
+import '../Home/home_screen.dart';
 
 class CustomPlanReadyPage extends StatelessWidget {
   final String goal;
@@ -53,13 +55,54 @@ class CustomPlanReadyPage extends StatelessWidget {
     final fats = (cals * 0.25 / 9).round();
     final unit = isImperial ? "lbs" : "kg";
 
+    Future<void> savePlanToFirestore() async {
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) return;
+
+        final cals = _calories;
+        final carbs = (cals * 0.4 / 4).round();
+        final protein = (cals * 0.35 / 4).round();
+        final fats = (cals * 0.25 / 9).round();
+        final unit = isImperial ? "lbs" : "kg";
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('plan')
+            .doc('current_plan')
+            .set({
+          'goal': goal,
+          'targetWeight': targetWeight,
+          'currentWeight': currentWeight,
+          'isImperial': isImperial,
+          'speed': speed,
+          'dailyCalories': cals,
+          'macros': {
+            'carbs': carbs,
+            'protein': protein,
+            'fats': fats,
+          },
+          'achievementDate': _achievementDate,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        print("Error saving plan: $e");
+        Get.snackbar("Error", "Failed to save your plan. Please try again.");
+      }
+    }
+
     return OnboardingScaffold(
       title: "Congratulations\nyour custom plan is ready!",
+      progress: 0.90,
       footer: SizedBox(
         width: double.infinity,
         height: 56,
         child: ElevatedButton(
-          onPressed: () => Get.to(() => const PlanSourcesPage()),
+          onPressed: () async {
+            await savePlanToFirestore();
+            Get.offAll(() => const HomeScreen());
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.black,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),

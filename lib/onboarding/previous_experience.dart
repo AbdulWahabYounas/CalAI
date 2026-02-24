@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'onboarding_scaffold.dart';
 import 'coach_selection.dart';
+import '../controllers/onboarding_controller.dart';
 
 class PreviousExperiencePage extends StatefulWidget {
-  final double currentWeight;
   final bool isImperial;
 
   const PreviousExperiencePage({
     super.key,
-    required this.currentWeight,
     required this.isImperial,
   });
 
@@ -30,11 +29,12 @@ class _PreviousExperiencePageState extends State<PreviousExperiencePage> {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "Have you tried other calorie tracking apps?",
+      progress: 0.24,
       isContinueEnabled: _hasExperience != null,
       onContinue: () {
-        // Navigate to Coach Selection Page
+        final controller = Get.find<OnboardingController>();
+        controller.experience.value = _hasExperience! ? "Yes" : "No";
         Get.to(() => CoachSelectionPage(
-          currentWeight: widget.currentWeight,
           isImperial: widget.isImperial,
         ));
       },

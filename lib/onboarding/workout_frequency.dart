@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'onboarding_scaffold.dart';
 import 'source_page.dart';
+import '../controllers/onboarding_controller.dart';
 
 class WorkoutFrequencyPage extends StatefulWidget {
-  final double currentWeight;
   final bool isImperial;
 
   const WorkoutFrequencyPage({
     super.key,
-    required this.currentWeight,
     required this.isImperial,
   });
 
@@ -31,10 +30,12 @@ class _WorkoutFrequencyPageState extends State<WorkoutFrequencyPage> {
     return OnboardingScaffold(
       title: "How many workouts do you do per week?",
       subtitle: "This will be used to calibrate your custom plan.",
+      progress: 0.16,
       isContinueEnabled: _selectedFrequency != null,
       onContinue: () {
+        final controller = Get.find<OnboardingController>();
+        controller.workoutFrequency.value = _selectedFrequency!;
         Get.to(() => SourcePage(
-          currentWeight: widget.currentWeight,
           isImperial: widget.isImperial,
         ));
       },

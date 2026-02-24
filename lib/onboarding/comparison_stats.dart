@@ -23,6 +23,7 @@ class ComparisonStatsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "Lose twice as much weight with Cal AI vs on your own",
+      progress: 0.52,
       isContinueEnabled: true,
       onContinue: () {
         Get.to(() => BarriersSelectionPage(

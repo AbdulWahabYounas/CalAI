@@ -48,6 +48,7 @@ class _BarriersSelectionPageState extends State<BarriersSelectionPage> {
   Widget build(BuildContext context) {
     return OnboardingScaffold(
       title: "What's stopping you from reaching your goals?",
+      progress: 0.56,
       isContinueEnabled: _selectedBarriers.isNotEmpty,
       onContinue: () {
         Get.to(() => DietSelectionPage(
