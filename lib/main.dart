@@ -3,12 +3,19 @@ import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'splash_screen.dart';
+import 'services/auth_service.dart';
+import 'services/step_tracker_service.dart';
+import 'onboarding/gender_selection.dart';
+import 'Home/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  StepTrackerService.initService();
+
   runApp(const MyApp());
 }
 
