@@ -42,6 +42,7 @@ class MealLogService {
       await collection.add(food.toMap());
       return true;
     } catch (e) {
+      print("Firestore Error (logMeal): $e");
       return false;
     }
   }
@@ -73,6 +74,7 @@ class MealLogService {
           .map((doc) => FoodModel.fromFirestore(doc))
           .toList();
     } catch (e) {
+      print("Firestore Error (getTodayLogs): $e");
       return [];
     }
   }
@@ -128,6 +130,7 @@ class MealLogService {
 
       return dailyTotals;
     } catch (e) {
+      print("Firestore Error (getDailyCaloriesForRange): $e");
       return {};
     }
   }
@@ -169,6 +172,7 @@ class MealLogService {
       await collection.add(activity.toMap());
       return true;
     } catch (e) {
+      print("Firestore Error (logActivity): $e");
       return false;
     }
   }
@@ -216,6 +220,7 @@ class MealLogService {
       final data = snapshot.data() as Map<String, dynamic>?;
       return (data?['waterOz'] ?? 0).toDouble();
     } catch (e) {
+      print("Firestore Error (getTodayWater): $e");
       return 0;
     }
   }
@@ -231,6 +236,7 @@ class MealLogService {
       }, SetOptions(merge: true));
       return true;
     } catch (e) {
+      print("Firestore Error (updateWater): $e");
       return false;
     }
   }

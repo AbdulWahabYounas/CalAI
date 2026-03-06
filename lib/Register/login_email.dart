@@ -104,7 +104,9 @@ class _LoginEmailPageState extends State<LoginEmailPage> {
                   : "Account created successfully!")),
         );
         // Navigate to Home Screen
-        Get.offAll(() => const HomeScreen());
+        if (Get.currentRoute != '/HomeScreen') {
+          Get.offAll(() => const HomeScreen());
+        }
       }
     }
   }

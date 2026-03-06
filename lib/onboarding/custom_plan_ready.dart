@@ -54,6 +54,9 @@ class CustomPlanReadyPage extends StatelessWidget {
     final protein = (cals * 0.35 / 4).round();
     final fats = (cals * 0.25 / 9).round();
     final unit = isImperial ? "lbs" : "kg";
+    
+    // Using a ValueNotifier for simple state management in a StatelessWidget
+    final ValueNotifier<bool> isSaving = ValueNotifier<bool>(false);
 
     Future<void> savePlanToFirestore() async {
       try {
@@ -88,27 +91,41 @@ class CustomPlanReadyPage extends StatelessWidget {
         });
       } catch (e) {
         print("Error saving plan: $e");
-        Get.snackbar("Error", "Failed to save your plan. Please try again.");
+        // We don't show a snackbar here because we want to proceed to home anyway
+        // and the print is already in the original.
       }
     }
 
     return OnboardingScaffold(
       title: "Congratulations\nyour custom plan is ready!",
       progress: 0.90,
-      footer: SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: ElevatedButton(
-          onPressed: () async {
-            await savePlanToFirestore();
-            Get.offAll(() => const HomeScreen());
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          ),
-          child: const Text("Let's get started!", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        ),
+      footer: ValueListenableBuilder<bool>(
+        valueListenable: isSaving,
+        builder: (context, saving, child) {
+          return SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: saving ? null : () async {
+                isSaving.value = true;
+                try {
+                  await savePlanToFirestore();
+                } finally {
+                  if (Get.currentRoute != '/HomeScreen') {
+                    Get.offAll(() => const HomeScreen());
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              ),
+              child: saving 
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text("Let's get started!", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+          );
+        }
       ),
       child: Column(
         children: [

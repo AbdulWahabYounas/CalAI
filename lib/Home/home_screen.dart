@@ -6,11 +6,12 @@ import '../models/activity_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'settings_screen.dart';
-import 'analytics_screen.dart';
+// Removed unused AnalyticsScreen import
 import 'package:intl/intl.dart';
 import '../screens/food_search_screen.dart';
 import '../services/step_tracker_service.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../progress/progress_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,9 +48,24 @@ class _HomeScreenState extends State<HomeScreen> {
     _initStepTracking();
   }
 
+  bool _permissionRequested = false;
+
   Future<void> _initStepTracking() async {
-    if (await Permission.activityRecognition.request().isGranted) {
-      await StepTrackerService.start();
+    if (_permissionRequested) return;
+    _permissionRequested = true;
+
+    try {
+      final status = await Permission.activityRecognition.status;
+      if (!status.isGranted) {
+        final result = await Permission.activityRecognition.request();
+        if (result.isGranted) {
+          await StepTrackerService.start();
+        }
+      } else {
+        await StepTrackerService.start();
+      }
+    } catch (e) {
+      print("Error initializing step tracking: $e");
     }
   }
 
@@ -64,37 +80,49 @@ class _HomeScreenState extends State<HomeScreen> {
             .doc('current_plan')
             .get();
 
-        if (doc.exists) {
+        if (doc.exists && mounted) {
           setState(() {
             _userPlan = doc.data();
             _isLoading = false;
           });
-        } else {
-          setState(() => _isLoading = false);
+          return;
         }
       }
+      // If user is null or doc doesn't exist, stop loading anyway
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _fetchTodayData() async {
-    setState(() => _isLoadingLogs = true);
-    final totals = await _mealLogService.getTodayTotals();
-    final logs = await _mealLogService.getTodayLogs();
-    final activities = await _mealLogService.getTodayActivities();
-    final water = await _mealLogService.getTodayWater();
-    final steps = await _mealLogService.getTodaySteps();
+    try {
+      setState(() => _isLoadingLogs = true);
+      final totals = await _mealLogService.getTodayTotals();
+      final logs = await _mealLogService.getTodayLogs();
+      final activities = await _mealLogService.getTodayActivities();
+      final water = await _mealLogService.getTodayWater();
+      final steps = await _mealLogService.getTodaySteps();
 
-    if (mounted) {
-      setState(() {
-        _todayTotals = totals;
-        _todayLogs = logs;
-        _todayActivities = activities;
-        _todayWater = water;
-        _currentSteps = steps;
-        _isLoadingLogs = false;
-      });
+      if (mounted) {
+        setState(() {
+          _todayTotals = totals;
+          _todayLogs = logs;
+          _todayActivities = activities;
+          _todayWater = water;
+          _currentSteps = steps;
+          _isLoadingLogs = false;
+        });
+      }
+    } catch (e) {
+      print("Error fetching today's data: $e");
+      if (mounted) {
+        setState(() => _isLoadingLogs = false);
+      }
     }
   }
 
@@ -142,10 +170,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: IndexedStack(
-        index: _currentIndex == 1 ? 1 : (_currentIndex == 2 ? 0 : 0),
+        index: _currentIndex,
         children: [
-          _currentIndex == 1 ? const AnalyticsScreen() : _buildHomeTab(),
-          _currentIndex == 2 ? const SettingsScreen() : const SizedBox.shrink(),
+          _buildHomeTab(),
+          const ProgressScreen(),
+          const SettingsScreen(),
         ],
       ),
       bottomNavigationBar: _buildBottomNavBar(),
@@ -193,43 +222,43 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader() {
-    final consumed = _todayTotals['calories'] ?? 0;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const Row(
           children: [
-            Icon(Icons.apple, color: Colors.black, size: 32),
+            Icon(Icons.apple, color: Colors.black, size: 36),
             SizedBox(width: 8),
             Text(
               "Cal AI",
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
                 color: Colors.black,
               ),
             ),
           ],
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: Row(
+          child: const Row(
             children: [
-              const Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
-              const SizedBox(width: 4),
+              Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
+              SizedBox(width: 4),
               Text(
-                consumed.toStringAsFixed(0),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                "1",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
           ),
@@ -251,32 +280,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Column(
           children: [
-            Text(
-              dayName,
-              style: TextStyle(
-                color: Colors.grey.shade400,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
             Container(
-              height: 40,
-              width: 40,
+              height: 36,
+              width: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: isToday
-                    ? Border.all(color: Colors.black, style: BorderStyle.solid, width: 1.5)
-                    : Border.all(color: Colors.grey.shade200, style: BorderStyle.none),
+                color: isToday ? const Color(0xFFFFE5E5) : Colors.transparent,
+                border: Border.all(
+                  color: isToday ? const Color(0xFFFF4D4D) : Colors.green.withOpacity(0.3),
+                  width: 1,
+                ),
               ),
               alignment: Alignment.center,
               child: Text(
-                date.day.toString(),
+                dayName,
                 style: TextStyle(
-                  color: isToday ? Colors.black : Colors.grey.shade400,
-                  fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                  color: isToday ? const Color(0xFFFF4D4D) : Colors.black87,
                   fontSize: 14,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              date.day.toString(),
+              style: TextStyle(
+                color: isToday ? Colors.black : Colors.grey.shade400,
+                fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                fontSize: 12,
               ),
             ),
           ],
@@ -299,14 +330,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final progress = (_currentSteps / _stepTarget).clamp(0.0, 1.0);
     return Container(
       padding: const EdgeInsets.all(20),
-      height: 200,
+      height: 220,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -314,25 +346,24 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Row(
-                children: [
-                  Text(
-                    NumberFormat('#,###').format(_currentSteps),
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    " /${NumberFormat('#,###').format(_stepTarget)}",
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade400, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              Text(
+                NumberFormat('#,###').format(_currentSteps),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  " /${NumberFormat('#,###').format(_stepTarget)}",
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade400, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
           Text(
             "Steps today",
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
           ),
           const Spacer(),
           Center(
@@ -340,27 +371,34 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.center,
               children: [
                 SizedBox(
-                  height: 90,
-                  width: 90,
+                  height: 100,
+                  width: 100,
                   child: CircularProgressIndicator(
                     value: 1.0,
                     strokeWidth: 8,
                     backgroundColor: Colors.transparent,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey.shade100),
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey.shade50),
                   ),
                 ),
                 SizedBox(
-                  height: 90,
-                  width: 90,
+                  height: 100,
+                  width: 100,
                   child: CircularProgressIndicator(
                     value: progress,
-                    strokeWidth: 8,
+                    strokeWidth: 10,
                     backgroundColor: Colors.transparent,
                     valueColor: const AlwaysStoppedAnimation<Color>(Colors.black),
                     strokeCap: StrokeCap.round,
                   ),
                 ),
-                const Icon(Icons.directions_walk, size: 24, color: Colors.black),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.directions_walk, size: 28, color: Colors.black),
+                ),
               ],
             ),
           ),
@@ -376,14 +414,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       padding: const EdgeInsets.all(20),
-      height: 200,
+      height: 220,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -392,25 +431,25 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.local_fire_department, size: 20),
-              const SizedBox(width: 4),
+              const Icon(Icons.local_fire_department, size: 24, color: Colors.black),
+              const SizedBox(width: 6),
               Text(
                 totalBurned.toStringAsFixed(0),
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
               ),
             ],
           ),
           Text(
             "Calories burned",
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           _buildBurnItem(Icons.directions_run, "Steps", "+${stepCals.toStringAsFixed(0)}"),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           if (_todayActivities.isNotEmpty)
             _buildBurnItem(Icons.fitness_center, _todayActivities.first.name, "+${_todayActivities.first.caloriesBurned.toStringAsFixed(0)}")
           else
-            _buildBurnItem(Icons.fitness_center, "Weight lifting", "+0"),
+            _buildBurnItem(Icons.fitness_center, "Weight lifting", "+50"),
         ],
       ),
     );
@@ -420,17 +459,17 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(8),
           decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
-          child: Icon(icon, color: Colors.white, size: 14),
+          child: Icon(icon, color: Colors.white, size: 16),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-              Text(value, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black)),
+              Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.black)),
             ],
           ),
         ),
@@ -441,14 +480,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildWaterCard() {
     final cups = (_todayWater / 8).floor();
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -456,29 +496,20 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: Colors.blue.withOpacity(0.05), borderRadius: BorderRadius.circular(16)),
             child: const Icon(Icons.local_drink_outlined, color: Colors.blue, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Water", style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500)),
-                Text("${_todayWater.toStringAsFixed(0)} fl oz ($cups cups)", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
-            ),
+            child: Text("${_todayWater.toStringAsFixed(0)} fl oz ($cups cups)", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           IconButton(
             onPressed: () => _updateWater(-8),
-            icon: const Icon(Icons.remove_circle_outline),
-            color: Colors.grey,
+            icon: const Icon(Icons.remove_circle_outline, color: Colors.black, size: 28),
           ),
           IconButton(
             onPressed: () => _updateWater(8),
-            icon: const Icon(Icons.add_circle),
-            color: Colors.black,
-            iconSize: 32,
+            icon: const Icon(Icons.add_circle, color: Colors.black, size: 32),
           ),
         ],
       ),
@@ -503,58 +534,56 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: const Color(0xFFF1F3F5).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(32),
       ),
       child: Row(
         children: [
           Container(
-            height: 50,
-            width: 50,
-            decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16)),
-            child: const Center(child: Icon(Icons.fitness_center, color: Colors.black, size: 24)),
+            height: 80,
+            width: 80,
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+            child: const Center(child: Icon(Icons.fitness_center, color: Colors.black, size: 32)),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(activity.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E1E1E))),
-                const SizedBox(height: 4),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.local_fire_department, size: 12, color: Colors.orange),
-                    const SizedBox(width: 2),
-                    Text("${activity.caloriesBurned.toStringAsFixed(0)} calories", style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text(activity.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    if (timeStr.isNotEmpty)
+                      Text(timeStr, style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 10),
                 Row(
                   children: [
-                    const Icon(Icons.auto_awesome, size: 10, color: Colors.grey),
-                    const SizedBox(width: 2),
-                    Text("Intensity: ${activity.intensity}", style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.timer_outlined, size: 10, color: Colors.grey),
-                    const SizedBox(width: 2),
-                    Text("${activity.durationMinutes} Mins", style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                    const Icon(Icons.local_fire_department, size: 16, color: Colors.black),
+                    const SizedBox(width: 4),
+                    Text("${activity.caloriesBurned.toStringAsFixed(0)} calories", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.black)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Icon(Icons.auto_awesome, size: 12, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text("Intensity: ${activity.intensity}", style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.timer_outlined, size: 12, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text("${activity.durationMinutes} Mins", style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ],
             ),
           ),
-          if (timeStr.isNotEmpty)
-            Text(timeStr, style: TextStyle(fontSize: 11, color: Colors.grey.shade400, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -570,20 +599,20 @@ class _HomeScreenState extends State<HomeScreen> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.red.shade400,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(32),
         ),
         child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
       ),
       child: Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F3F5).withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(24),
+          color: const Color(0xFFF1F3F5).withOpacity(0.5),
+          borderRadius: BorderRadius.circular(32),
         ),
         child: Row(
           children: [
@@ -592,7 +621,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 100,
               width: 100,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 image: const DecorationImage(
                   image: NetworkImage("https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=200&auto=format&fit=crop"),
                   fit: BoxFit.cover,
@@ -611,23 +640,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Text(
                           meal.name,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E)),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (timeStr.isNotEmpty)
-                        Text(timeStr, style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
+                        Text(timeStr, style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Icon(Icons.local_fire_department, size: 14, color: Colors.black),
+                      const Icon(Icons.local_fire_department, size: 16, color: Colors.black),
                       const SizedBox(width: 4),
                       Text(
                         "${meal.calories.toStringAsFixed(0)} calories",
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.black),
                       ),
                     ],
                   ),
@@ -635,9 +664,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     children: [
                       _buildMiniMacroChip("🍗", "${meal.protein.toStringAsFixed(0)}g"),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       _buildMiniMacroChip("🍞", "${meal.carbs.toStringAsFixed(0)}g"),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       _buildMiniMacroChip("💧", "${meal.fat.toStringAsFixed(0)}g"),
                     ],
                   ),

@@ -5,6 +5,8 @@ import 'package:pedometer/pedometer.dart';
 import 'meal_log_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_core/firebase_core.dart';
+import '../firebase_options.dart';
 
 @pragma('vm:entry-point')
 void startCallback() {
@@ -19,6 +21,15 @@ class StepTaskHandler extends TaskHandler {
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
+    try {
+      // Initialize Firebase for the background isolate
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (e) {
+      print('Firebase initialization error in background: $e');
+    }
+
     _stepCountSubscription = Pedometer.stepCountStream.listen(
       _onStepCount,
       onError: _onStepCountError,

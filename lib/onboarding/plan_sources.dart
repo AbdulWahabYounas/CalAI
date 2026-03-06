@@ -15,7 +15,11 @@ class PlanSourcesPage extends StatelessWidget {
         width: double.infinity,
         height: 56,
         child: ElevatedButton(
-          onPressed: () => Get.offAll(() => const HomeScreen()),
+          onPressed: () {
+            if (Get.currentRoute != '/HomeScreen') {
+              Get.offAll(() => const HomeScreen());
+            }
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.black,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),

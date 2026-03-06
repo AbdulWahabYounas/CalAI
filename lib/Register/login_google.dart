@@ -10,7 +10,9 @@ class LoginGoogle {
     
     // Check if user is signed in and navigate
     if (authService.user.value != null) {
-      Get.offAll(() => const GenderSelectionPage());
+      if (Get.currentRoute != '/GenderSelectionPage') {
+        Get.offAll(() => const GenderSelectionPage());
+      }
     }
   }
 }

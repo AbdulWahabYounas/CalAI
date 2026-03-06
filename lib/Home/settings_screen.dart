@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/auth_service.dart';
+import '../Register/login_google.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -40,6 +41,11 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.lock_outline,
             title: "Privacy",
             onTap: () {},
+          ),
+          _buildSettingsItem(
+            icon: Icons.login,
+            title: "Sign in with Google",
+            onTap: () => LoginGoogle.signIn(context),
           ),
           const Divider(height: 40),
           _buildSettingsItem(

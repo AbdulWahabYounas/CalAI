@@ -1,6 +1,11 @@
 import 'dart:async';
+
 import 'package:cal_ai/Register/register_home.dart';
+import 'package:cal_ai/Home/home_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/src/extension_navigation.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,10 +19,16 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Timer(const Duration(seconds: 4), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const RegisterHome()),
-      );
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        if (Get.currentRoute != '/HomeScreen') {
+          Get.offAll(() => const HomeScreen());
+        }
+      } else {
+        if (Get.currentRoute != '/RegisterHome') {
+          Get.offAll(() => const RegisterHome());
+        }
+      }
     });
   }
 

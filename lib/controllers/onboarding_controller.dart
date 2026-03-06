@@ -106,7 +106,7 @@ class OnboardingController extends GetxController {
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      print("Error saving plan: $e");
+      print("Firestore Error (savePlanToFirestore): $e");
       rethrow;
     }
   }
